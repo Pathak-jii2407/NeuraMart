@@ -27,7 +27,7 @@ CONFIG = {
     'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,  # 16MB max file size
     'HTTP_TIMEOUT': 5,  # Timeout for HTTP requests
     'MAX_RESULTS': 20,  # Reduced for faster response
-    'CACHE_SIZE': 100,  # Max cached queries (for in-memory fallback)
+    'CACHE_SIZE': 10,  # Max cached queries (for in-memory fallback)
     'FILE_DELETE_RETRIES': 3,  # Number of retries for file deletion
     'FILE_DELETE_DELAY': 0.5,  # Delay between retries in seconds
     'DB_PATH': 'products.db',  # SQLite database path
