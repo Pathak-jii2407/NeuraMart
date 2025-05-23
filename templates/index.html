@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroMart</title>
+    <style>
+        :root {
+            --primary-color: #ff9900;
+            --hover-color: #e68a00;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: var(--text-color);
+        }
+        h1 {
+            text-align: center;
+        }
+        .search-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .search-container input, .search-container select, .search-container button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .search-container button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .search-container button:hover:not(:disabled) {
+            background-color: var(--hover-color);
+        }
+        .search-container button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .result-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .result-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .result-card a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .result-card a:hover {
+            background-color: var(--hover-color);
+        }
+        #loading {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        #loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--primary-color);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        #no-results {
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
+            display: none;
+        }
+        #caption {
+            text-align: center;
+            margin-top: 10px;
+            color: #555;
+            display: none;
+        }
+        .sort-container {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            .search-container input, .search-container select, .search-container button {
+                width: 100%;
+                margin: 5px 0;
+            }
+            .results {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>NeuroMart: Search Smarter – Just Click, Snap & Find</h1>
+<a href="/" class="mt-4 inline-block w-full text-center bg-gray-600 text-white p-2 rounded-md hover:bg-gray-700 transition">🏠 Back to Main Page</a>
+    <div class="search-container">
+        <form id="searchForm" enctype="multipart/form-data">
+            <input type="text" name="query" id="query" placeholder="Enter product name..." list="recent-searches" aria-label="Search query">
+            <datalist id="recent-searches"></datalist>
+            <input type="file" name="image" id="image" accept="image/*" aria-label="Upload product image">
+            <input type="number" name="min_price" id="min_price" placeholder="Min Price" step="any" min="0" aria-label="Minimum price">
+            <input type="number" name="max_price" id="max_price" placeholder="Max Price" step="any" min="0" aria-label="Maximum price">
+            <button type="submit" id="searchButton" aria-label="Search products">Search</button>
+        </form>
+    </div>
+    <div id="caption"></div>
+    <div class="sort-container">
+        <label for="sort">Sort by: </label>
+        <select id="sort" onchange="sortResults()" aria-label="Sort results">
+            <option value="default">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating-desc">Rating: High to Low</option>
+        </select>
+    </div>
+    <div id="loading">Loading products...</div>
+    <div id="no-results">No products found.</div>
+    <div class="results" id="results"></div>
+
+    <script>
+        let allResults = [];
+
+        // Load recent searches
+        function loadRecentSearches() {
+            const searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            const datalist = document.getElementById('recent-searches');
+            datalist.innerHTML = '';
+            searches.forEach(search => {
+                const option = document.createElement('option');
+                option.value = search;
+                datalist.appendChild(option);
+            });
+        }
+
+        // Save a search query
+        function saveSearch(query) {
+            if (!query) return;
+            let searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            if (!searches.includes(query)) {
+                searches.unshift(query);
+                searches = searches.slice(0, 5); // Keep last 5
+                localStorage.setItem('recentSearches', JSON.stringify(searches));
+                loadRecentSearches();
+            }
+        }
+
+        // Sort results
+        function sortResults() {
+            const sortValue = document.getElementById('sort').value;
+            let sortedResults = [...allResults];
+
+            if (sortValue === 'price-asc') {
+                sortedResults.sort((a, b) => a.price - b.price);
+            } else if (sortValue === 'price-desc') {
+                sortedResults.sort((a, b) => b.price - a.price);
+            } else if (sortValue === 'rating-desc') {
+                sortedResults.sort((a, b) => {
+                    const ratingA = parseFloat(a.rating) || 0;
+                    const ratingB = parseFloat(b.rating) || 0;
+                    return ratingB - ratingA;
+                });
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            sortedResults.forEach(result => appendResult(result, resultsDiv));
+        }
+
+        // Append a single result
+        function appendResult(result, resultsDiv) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <img src="${result.image || 'https://via.placeholder.com/150'}" alt="${result.title}" loading="lazy">
+                <h3>${result.title}</h3>
+                <p>Price: ₹${result.price.toFixed(2)}</p>
+                <p>Rating: ${result.rating} ⭐</p>
+                <p>Source: ${result.source}</p>
+                <p>Category: ${result.category}</p>
+                <a href="${result.link}" target="_blank" aria-label="View ${result.title} on ${result.source}">Checkout</a>
+            `;
+            resultsDiv.appendChild(card);
+        }
+
+        // Process streamed response
+        async function readStream(reader, resultsDiv) {
+            const decoder = new TextDecoder();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n').filter(line => line.trim());
+
+                for (const line of lines) {
+                    try {
+                        const data = JSON.parse(line);
+                        if (data.error) {
+                            alert(data.error);
+                            continue;
+                        }
+                        const results = data.results || data;
+                        const caption = data.caption || null;
+                        if (caption) {
+                            const captionDiv = document.getElementById('caption');
+                            captionDiv.textContent = caption === "Explore Popular Products" ? caption : `Searching for: "${caption}"`;
+                            captionDiv.style.display = 'block';
+                        }
+                        allResults = allResults.concat(results);
+                        document.getElementById('no-results').style.display = allResults.length ? 'none' : 'block';
+                        results.forEach(result => appendResult(result, resultsDiv));
+                        sortResults();
+                    } catch (e) {
+                        console.error('Error parsing chunk:', e);
+                    }
+                }
+            }
+        }
+
+        // Form submission
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const noResultsDiv = document.getElementById('no-results');
+            const captionDiv = document.getElementById('caption');
+            const searchButton = document.getElementById('searchButton');
+            const query = document.getElementById('query').value.trim();
+
+            resultsDiv.innerHTML = '';
+            noResultsDiv.style.display = 'none';
+            captionDiv.style.display = 'none';
+            allResults = [];
+            loadingDiv.style.display = 'block';
+            searchButton.disabled = true;
+
+            try {
+                const formData = new FormData(e.target);
+                saveSearch(query);
+
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.error || 'An error occurred');
+                    return;
+                }
+
+                const reader = response.body.getReader();
+                await readStream(reader, resultsDiv);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while fetching products.');
+            } finally {
+                loadingDiv.style.display = 'none';
+                searchButton.disabled = false;
+            }
+        });
+
+        // Initialize with default products
+        window.addEventListener('load', () => {
+            document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+        });
+
+        loadRecentSearches();
+    </script>
+</body>
+</html>
