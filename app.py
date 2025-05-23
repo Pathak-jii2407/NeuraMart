@@ -42,7 +42,7 @@ os.makedirs(CONFIG['UPLOAD_FOLDER'], exist_ok=True)
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # Predefined categories for default display
-DEFAULT_CATEGORIES = ["t-shirt", "Shoes", "watches", "Kurti", "Electronics"]
+DEFAULT_CATEGORIES = ["t-shirt", "Shoes"]
 
 # Load BLIP model
 logging.info("⚙️ Loading BLIP captioning model...")
