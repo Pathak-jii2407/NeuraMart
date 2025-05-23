@@ -6,8 +6,8 @@ async-timeout
 attrs 
 beautifulsoup4
 blinker 
-Bottleneck 
-Brotli 
+bottleneck
+brotli
 certifi 
 charset-normalizer 
 click 
@@ -16,7 +16,7 @@ datasets
 dill 
 Django==5.2
 filelock 
-Flask 
+flask 
 frozenlist 
 fsspec 
 huggingface_hub 
@@ -67,7 +67,7 @@ transformers
 typing_extensions 
 tzdata 
 urllib3 
-Werkzeug 
+werkzeug
 win-inet-pton 
 xxhash 
 yarl 
