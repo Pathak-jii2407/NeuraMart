@@ -4,7 +4,8 @@ aiosignal
 asgiref==3.8.1
 async-timeout 
 attrs 
-beautifulsoup4 blinker 
+beautifulsoup4
+blinker 
 Bottleneck 
 Brotli 
 certifi 
