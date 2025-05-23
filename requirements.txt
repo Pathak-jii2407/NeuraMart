@@ -55,7 +55,8 @@ requests
 safetensors 
 scipy==1.15.2
 six 
-soupsieve sqlparse==0.5.3
+soupsieve
+sqlparse==0.5.3
 sympy==1.14.0
 tokenizers 
 torch==2.7.0
